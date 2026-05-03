@@ -556,31 +556,69 @@ export default function LeadsPageClient() {
                           {l.submittedAt ? new Date(l.submittedAt).toLocaleString() : "-"}
                         </td>
                         {columns.map((c) => {
+                          const isEditing = editingLeadId === String(l._id);
                           const val = l.answers?.[c];
                           return (
                             <td key={c} className="px-6 py-4 text-slate-900 font-semibold">
-                              {Array.isArray(val) ? val.join(", ") : val || "-"}
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues[c] ?? ""}
+                                  onChange={(event) =>
+                                    setEditValues((prev) => ({
+                                      ...prev,
+                                      [c]: event.target.value,
+                                    }))
+                                  }
+                                  className="w-full min-w-[150px] rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none"
+                                />
+                              ) : (
+                                Array.isArray(val) ? val.join(", ") : val || "-"
+                              )}
                             </td>
                           );
                         })}
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditLead(l)}
-                              disabled={deletingSelected || deletingLeadId === String(l._id)}
-                              className="rounded-lg border border-indigo-700 bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteLeads([l._id])}
-                              disabled={deletingSelected || deletingLeadId === String(l._id)}
-                              className="rounded-lg border border-rose-700 bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
-                            >
-                              {deletingLeadId === String(l._id) ? "..." : "Delete"}
-                            </button>
+                            {editingLeadId === String(l._id) ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveLeadEdit}
+                                  disabled={savingEdit}
+                                  className="rounded-lg border border-indigo-700 bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                  {savingEdit ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={closeEditLead}
+                                  disabled={savingEdit}
+                                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => openEditLead(l)}
+                                  disabled={deletingSelected || deletingLeadId === String(l._id) || Boolean(editingLeadId)}
+                                  className="rounded-lg border border-indigo-700 bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLeads([l._id])}
+                                  disabled={deletingSelected || deletingLeadId === String(l._id) || Boolean(editingLeadId)}
+                                  className="rounded-lg border border-rose-700 bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                  {deletingLeadId === String(l._id) ? "..." : "Delete"}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -593,66 +631,6 @@ export default function LeadsPageClient() {
         </AnimatePresence>
       </section>
 
-      <AnimatePresence>
-        {editingLeadId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
-            >
-              <h2 className="text-lg font-bold text-slate-900">Edit Lead</h2>
-              <p className="mt-1 text-sm text-slate-500">Update lead field values and save.</p>
-
-              <div className="mt-5 space-y-4">
-                {columns.map((column) => (
-                  <label key={column} className="block">
-                    <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
-                      {column}
-                    </span>
-                    <input
-                      type="text"
-                      value={editValues[column] ?? ""}
-                      onChange={(event) =>
-                        setEditValues((prev) => ({
-                          ...prev,
-                          [column]: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none"
-                    />
-                  </label>
-                ))}
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeEditLead}
-                  disabled={savingEdit}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveLeadEdit}
-                  disabled={savingEdit}
-                  className="rounded-xl border border-indigo-700 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {savingEdit ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
